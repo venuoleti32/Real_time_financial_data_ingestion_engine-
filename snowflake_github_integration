@@ -17,4 +17,4 @@ CREATE OR REPLACE API INTEGRATION github_api_int
 CREATE OR REPLACE GIT REPOSITORY my_financial_repo
   API_INTEGRATION = github_api_int
   GIT_CREDENTIALS = github_token_secret
-  ORIGIN = 'https://github.com/YOUR_GITHUB_USERNAME/financial-data-pipeline.git';
+  ORIGIN = 'https://github.com/venuoleti32/Real_time_financial_data_ingestion_engine-';
