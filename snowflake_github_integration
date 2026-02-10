@@ -1,0 +1,19 @@
+USE ROLE ACCOUNTADMIN;
+
+-- 1. Create/Update the Secret (Same as before, ensures Snowflake has your 'password')
+CREATE OR REPLACE SECRET github_token_secret
+  TYPE = password
+  USERNAME = 'venuoleti32'
+  PASSWORD = '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';
+
+-- 2. Create the API Integration (The 'Firewall' rule)
+CREATE OR REPLACE API INTEGRATION github_api_int
+  API_ALLOWED_PREFIXES = ('https://github.com/venuoleti32/')
+  API_PROVIDER = git_https_api
+  ENABLED = TRUE;
+
+-- 3. Create the Git Repository Object
+CREATE OR REPLACE GIT REPOSITORY my_financial_repo
+  API_INTEGRATION = github_api_int
+  GIT_CREDENTIALS = github_token_secret
+  ORIGIN = 'https://github.com/YOUR_GITHUB_USERNAME/financial-data-pipeline.git';
