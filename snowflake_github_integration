@@ -1,4 +1,5 @@
 USE ROLE ACCOUNTADMIN;
+USE DATABASE financial_db;
 
 -- 1. Create/Update the Secret (Same as before, ensures Snowflake has your 'password')
 CREATE OR REPLACE SECRET github_token_secret
