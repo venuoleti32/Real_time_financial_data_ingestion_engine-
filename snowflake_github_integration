@@ -1,0 +1,56 @@
+USE ROLE ACCOUNTADMIN;
+USE DATABASE financial_db;
+
+-- 1. Create/Update the Secret (Same as before, ensures Snowflake has your 'password')
+CREATE OR REPLACE SECRET github_token_secret
+  TYPE = password
+  USERNAME = 'venuoleti32'
+  PASSWORD = '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';
+
+-- 2. Create the API Integration (The 'Firewall' rule)
+CREATE OR REPLACE API INTEGRATION github_api_int
+  API_ALLOWED_PREFIXES = ('https://github.com/venuoleti32/')
+  API_PROVIDER = git_https_api
+  ENABLED = TRUE;
+
+ -- 1. Ensure you are using the right role
+USE ROLE ACCOUNTADMIN;
+
+-- 2. Give the ACCOUNTADMIN role ownership/usage of the secret just in case
+-- (If you created the secret with a different role like SYSADMIN)
+GRANT USAGE ON DATABASE financial_db TO ROLE ACCOUNTADMIN;
+GRANT USAGE ON SCHEMA financial_db.raw_ingestion TO ROLE ACCOUNTADMIN;
+GRANT READ ON SECRET financial_db.raw_ingestion.GITHUB_TOKEN_SECRET TO ROLE ACCOUNTADMIN;
+
+-- 3. Now run the ALTER with the EXACT case-sensitive path
+ALTER API INTEGRATION github_api_int 
+SET ALLOWED_AUTHENTICATION_SECRETS = ('financial_db.raw_ingestion.GITHUB_TOKEN_SECRET');
+
+-- 3. Create the Git Repository Object
+CREATE OR REPLACE GIT REPOSITORY my_financial_repo
+  API_INTEGRATION = github_api_int
+  GIT_CREDENTIALS = github_token_secret
+  ORIGIN = 'https://github.com/venuoleti32/Real_time_financial_data_ingestion_engine-';
+
+
+  USE ROLE ACCOUNTADMIN;
+
+-- 1. Remove the misplaced secret
+DROP SECRET IF EXISTS FINANCIAL_DB.PUBLIC.GITHUB_TOKEN_SECRET;
+
+-- 2. Create it exactly where we want it (Fully Qualified)
+CREATE OR REPLACE SECRET FINANCIAL_DB.RAW_INGESTION.GITHUB_TOKEN_SECRET
+  TYPE = PASSWORD
+  USERNAME = 'venuoleti32'
+  PASSWORD = 'g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';
+
+-- 3. Verify it's in the correct place now
+SHOW SECRETS IN SCHEMA FINANCIAL_DB.RAW_INGESTION;
+
+ALTER API INTEGRATION github_api_int 
+SET ALLOWED_AUTHENTICATION_SECRETS = ('FINANCIAL_DB.RAW_INGESTION.GITHUB_TOKEN_SECRET');
+
+CREATE OR REPLACE GIT REPOSITORY my_financial_repo
+  API_INTEGRATION = github_api_int
+  GIT_CREDENTIALS = FINANCIAL_DB.RAW_INGESTION.GITHUB_TOKEN_SECRET
+  ORIGIN = 'https://github.com/venuoleti32/Real_time_financial_data_ingestion_engine-';
