@@ -36,3 +36,5 @@ CREATE OR REPLACE FILE FORMAT my_csv_format
     volume NUMBER,
     ingested_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
 );
+
+
