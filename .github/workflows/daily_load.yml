@@ -1,0 +1,29 @@
+name: Daily Stock Load
+on:
+  schedule:
+    - cron: '0 21 * * 1-5' # Runs at 9 PM UTC (after market close) Mon-Fri
+  workflow_dispatch: # Allows you to run it manually for testing
+
+jobs:
+  run-ingestion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install pandas snowflake-connector-python[pandas] requests
+
+      - name: Run Ingestion Script
+        env:
+          SF_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SF_PASS: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SF_ACCT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          AV_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+        run: python silver_stock_prices.py
