@@ -1,41 +1,52 @@
+import os
+import time
 import pandas as pd
 import snowflake.connector
 from snowflake.connector.pandas_tools import write_pandas
 import requests
 from io import StringIO
 
+# 1. Configuration
+SYMBOLS = ['IBM', 'AAPL', 'TSLA', 'NVDA', 'GOOGL'] # Add any tickers you want
+API_KEY = os.getenv('AV_KEY')
 
-SYMBOL = 'IBM'
-API_KEY = 'IH5ZYXZNGBX7ZUS5'
-url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={SYMBOL}&apikey={API_KEY}&datatype=csv'
+def fetch_data(symbol):
+    print(f"Fetching data for {symbol}...")
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={API_KEY}&datatype=csv'
+    response = requests.get(url)
+    df = pd.read_csv(StringIO(response.text))
+    
+    # Standardize columns
+    df = df.rename(columns={
+        'timestamp': 'TRADE_DATE', 'open': 'OPEN_PRICE', 
+        'high': 'HIGH_PRICE', 'low': 'LOW_PRICE', 
+        'close': 'CLOSE_PRICE', 'volume': 'VOLUME'
+    })
+    df['SYMBOL'] = symbol
+    return df
 
-response = requests.get(url)
-df = pd.read_csv(StringIO(response.text))
+# 2. Main Loop
+all_data = []
+for s in SYMBOLS:
+    try:
+        data = fetch_data(s)
+        all_data.append(data)
+        time.sleep(15) # Stay under the 5 calls/min limit
+    except Exception as e:
+        print(f"Error fetching {s}: {e}")
 
+final_df = pd.concat(all_data, ignore_index=True)
 
-df = df.rename(columns={
-    'timestamp': 'TRADE_DATE',
-    'open': 'OPEN_PRICE',
-    'high': 'HIGH_PRICE',
-    'low': 'LOW_PRICE',
-    'close': 'CLOSE_PRICE',
-    'volume': 'VOLUME'
-})
-df['SYMBOL'] = SYMBOL
-df['TRADE_DATE'] = pd.to_datetime(df['TRADE_DATE']).dt.date
-
-# 3. Connect and Push to Snowflake
+# 3. Push to Snowflake
 conn = snowflake.connector.connect(
-    user='VENUOLETI32',
-    password='cuhkokwaxgEt6fakcu',
-    account='FRVIAWM-LP02516', 
+    user=os.getenv('SF_USER'),
+    password=os.getenv('SF_PASS'),
+    account=os.getenv('SF_ACCT'),
     warehouse='COMPUTE_WH',
     database='FINANCIAL_DB',
     schema='RAW_INGESTION'
 )
 
-
-success, nchunks, nrows, _ = write_pandas(conn, df, "SILVER_STOCK_PRICES")
-
-print(f"Success! Loaded {nrows} rows into Snowflake.")
+success, nchunks, nrows, _ = write_pandas(conn, final_df, "SILVER_STOCK_PRICES")
+print(f"Success! Total rows loaded: {nrows}")
 conn.close()
