@@ -6,7 +6,7 @@ from io import StringIO
 
 
 SYMBOL = 'IBM'
-API_KEY = 'IH5ZYXZNGBX7ZUS5'
+API_KEY = 'XXXXXXXXX'
 url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={SYMBOL}&apikey={API_KEY}&datatype=csv'
 
 response = requests.get(url)
@@ -27,7 +27,7 @@ df['TRADE_DATE'] = pd.to_datetime(df['TRADE_DATE']).dt.date
 # 3. Connect and Push to Snowflake
 conn = snowflake.connector.connect(
     user='VENUOLETI32',
-    password='cuhkokwaxgEt6fakcu',
+    password='XXXXXXXX',
     account='FRVIAWM-LP02516', 
     warehouse='COMPUTE_WH',
     database='FINANCIAL_DB',
